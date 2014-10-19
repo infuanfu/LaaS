@@ -1,23 +1,23 @@
 #!/usr/bin/env python
 
 import sys
+import select
 import ctypes
 from sdl2 import *
 from sdl2.sdlmixer import *
+import sdl2.ext as sdl2ext
+import time
+
+def play(chid, ch_wav, do_play):
+    if Mix_Playing(chid) and not do_play:
+        print "fadeout noise " + str(Mix_FadeOutChannel(chid, 2000))
+    elif not Mix_Playing(chid) and do_play:
+        print "fadein noise " + str(Mix_FadeInChannel(chid, ch_wav[chid], -1, 2000))
+    print "error: " + SDL_GetError()
 
 def main():
     """entry point"""
-    SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO)
-    window = SDL_CreateWindow(b"Hello World",
-                              SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-                              592, 460, SDL_WINDOW_SHOWN)
-    #windowsurface = SDL_GetWindowSurface(window)
-
-    #image = SDL_LoadBMP(b"exampleimage.bmp")
-    #SDL_BlitSurface(image, None, windowsurface, None)
-
-    SDL_UpdateWindowSurface(window)
-    #SDL_FreeSurface(image)
+    SDL_Init(SDL_INIT_AUDIO)
 
     for i in range(Mix_GetNumMusicDecoders()):
         print "decoder {}: {}".format(i,Mix_GetMusicDecoder(i))
@@ -27,44 +27,42 @@ def main():
     Mix_VolumeMusic(MIX_MAX_VOLUME)
     Mix_AllocateChannels(3)
 
-    noise = Mix_LoadWAV('data/noise.wav')
-    t440 = Mix_LoadWAV('data/440.wav')
-    t220 = Mix_LoadWAV('data/220.wav')
+    track_wav = [   Mix_LoadWAV('data/noise.wav'),
+                    Mix_LoadWAV('data/440.wav'),
+                    Mix_LoadWAV('data/220.wav'), ]
+    track_counter = [ 0, 0, 0, ]
 
     running = True
-    event = SDL_Event()
+    last_time = int(time.time())
     while running:
-        while SDL_PollEvent(ctypes.byref(event)) != 0:
-            if event.type == SDL_QUIT:
-                running = False
-                break
-            elif event.type == SDL_KEYDOWN:
-                if event.key.keysym.sym == SDLK_a:
-                    if Mix_Playing(0):
-                        print "fadeout noise " + str(Mix_FadeOutChannel(0, 2000))
-                    else:
-                        print "fadein noise " + str(Mix_FadeInChannel(0, noise, -1, 2000))
-                    print "error: " + SDL_GetError()
-                elif event.key.keysym.sym == SDLK_s:
-                    if Mix_Playing(1):
-                        print "fadeout 440 " + str(Mix_FadeOutChannel(1, 2000))
-                    else:
-                        print "fadein 440 " + str(Mix_FadeInChannel(1, t440, -1, 2000))
-                    print "error: " + SDL_GetError()
-                elif event.key.keysym.sym == SDLK_d:
-                    if Mix_Playing(2):
-                        print "fadeout 220 " + str(Mix_FadeOutChannel(2, 2000))
-                    else:
-                        print "fadein 220 " + str(Mix_FadeInChannel(2, t220, -1, 2000))
-                    print "error: " + SDL_GetError()
+        tick = False
+        now_time = int(time.time())
+
+        if now_time > last_time:
+            print "Tick"
+            last_time = now_time
+
+            track_counter = map( lambda x: max(0,x-1), track_counter )
+
+            if select.select([sys.stdin,],[],[],0.0)[0]:
+                c = sys.stdin.read(1)
+                if c == 'q':
+                    running = False
+                    break
+                elif c >= '0' and c <= '2':
+                    print "refresh " + c
+                    track_counter[int(c)] = 5;
+
+            for i,x in enumerate(track_counter):
+                play(i, track_wav, x>0)
 
     Mix_CloseAudio()
-    Mix_FreeChunk(noise)
-    Mix_FreeChunk(t440)
-    Mix_FreeChunk(t220)
+    Mix_FreeChunk(track_wav[0])
+    Mix_FreeChunk(track_wav[1])
+    Mix_FreeChunk(track_wav[2])
     Mix_Quit()
 
-    SDL_DestroyWindow(window)
+    #SDL_DestroyWindow(window)
     SDL_Quit()
     return 0
 
