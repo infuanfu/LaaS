@@ -10,9 +10,9 @@ import time
 
 def play(chid, ch_wav, do_play):
     if Mix_Playing(chid) and not do_play:
-        print "fadeout noise " + str(Mix_FadeOutChannel(chid, 2000))
+        print "fadeout " + str(Mix_FadeOutChannel(chid, 2000))
     elif not Mix_Playing(chid) and do_play:
-        print "fadein noise " + str(Mix_FadeInChannel(chid, ch_wav[chid], -1, 2000))
+        print "fadein " + str(Mix_FadeInChannel(chid, ch_wav[chid], -1, 2000))
     print "error: " + SDL_GetError()
 
 def main():
@@ -38,20 +38,20 @@ def main():
         tick = False
         now_time = int(time.time())
 
+        if select.select([sys.stdin,],[],[],0.0)[0]:
+            c = sys.stdin.read(1)
+            if c == 'q':
+                running = False
+                break
+            elif c >= '0' and c <= '2':
+                print "refresh " + c
+                track_counter[int(c)] = 5;
+
         if now_time > last_time:
             print "Tick"
             last_time = now_time
 
             track_counter = map( lambda x: max(0,x-1), track_counter )
-
-            if select.select([sys.stdin,],[],[],0.0)[0]:
-                c = sys.stdin.read(1)
-                if c == 'q':
-                    running = False
-                    break
-                elif c >= '0' and c <= '2':
-                    print "refresh " + c
-                    track_counter[int(c)] = 5;
 
             for i,x in enumerate(track_counter):
                 play(i, track_wav, x>0)
