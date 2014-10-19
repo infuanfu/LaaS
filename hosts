@@ -1,0 +1,9 @@
+#
+# 172.16.100.nnn is intended for senders
+# 172.16.200.nnn is intended for receivers
+#
+
+172.16.100.1    sender-eins
+
+172.16.200.1    receiver-eins
+172.16.200.2    receiver-zwei
