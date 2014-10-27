@@ -7,6 +7,7 @@ from sdl2 import *
 from sdl2.sdlmixer import *
 import sdl2.ext as sdl2ext
 import time
+import os
 
 def play(chid, ch_wav, do_play):
     if Mix_Playing(chid) and not do_play:
@@ -27,9 +28,13 @@ def main():
     Mix_VolumeMusic(MIX_MAX_VOLUME)
     Mix_AllocateChannels(3)
 
-    track_wav = [   Mix_LoadWAV('data/noise.wav'),
-                    Mix_LoadWAV('data/440.wav'),
-                    Mix_LoadWAV('data/220.wav'), ]
+    path = os.path.dirname(os.path.realpath(__file__))
+
+    print "path: {}".format(path)
+
+    track_wav = [   Mix_LoadWAV('{}/data/noise.wav'.format(path)),
+                    Mix_LoadWAV('{}/data/440.wav'.format(path)),
+                    Mix_LoadWAV('{}/data/220.wav'.format(path)), ]
     track_counter = [ 0, 0, 0, ]
 
     running = True
